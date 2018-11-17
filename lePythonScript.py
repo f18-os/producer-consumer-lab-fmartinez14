@@ -6,11 +6,9 @@ import numpy as np
 import base64
 import queue
 from threading import Thread
-from threading import Timer
-from threading import Lock
-import time
 
-leQuequeDeParis= queue.Queue(10)
+
+grayScaleQueue= queue.Queue(10)
 DisplayQueque = queue.Queue(10)
 
 def extractFrames(fileName):
@@ -31,30 +29,28 @@ def extractFrames(fileName):
         #encode the frame as base 64 to make debugging easier
         jpgAsText = base64.b64encode(jpgImage)
 
-        if count == 100:
-        	break
         # add the frame to the buffer
-        leQuequeDeParis.put(jpgAsText)
+        grayScaleQueue.put(jpgAsText)
        
         success,image = vidcap.read()
         print('Reading frame {} {}'.format(count, success))
         count += 1
-    leQuequeDeParis.put("Done")
+    grayScaleQueue.put("Done")
     print("Frame extraction complete")
 
 def grayScaleImages():
 
     count = 0 
 
-    startSize = leQuequeDeParis.qsize()
-
     while True:
-        print("Converting frame {}".format(count))
 
-        frameAsText = leQuequeDeParis.get(True)
+        frameAsText = grayScaleQueue.get(True)
         if frameAsText == "Done":
         	DisplayQueque.put("Done")
         	break;
+
+        print("Converting frame {}".format(count))
+
         # decode the frame 
         jpgRawImage = base64.b64decode(frameAsText)
 
@@ -72,10 +68,6 @@ def grayScaleImages():
         returnValue, imageValue = cv2.imencode('.jpg',grayscaleFrame)
         #encode the frame as base 64 to make debugging easier
         saveToBuffer = base64.b64encode(imageValue)
-
-
-        # useMe = np.fromstring(base64.b64decode(leText), dtype=np.uint8)
-        # showImage = cv2.imdecode(useMe, cv2.IMREAD_COLOR)
 
 
         # add the frame to the buffer
@@ -98,9 +90,10 @@ def displayFrames():
         # decode the frame 
         jpgRawImage = base64.b64decode(frameAsText)
 
-
+        #Using a from string to load the already existing numpy array sent by the grayscale thread.
         useMe = np.fromstring(jpgRawImage, dtype=np.uint8)
 
+        #Decode Image
         img = cv2.imdecode(useMe, cv2.IMREAD_COLOR)
 
 
@@ -113,43 +106,33 @@ def displayFrames():
             break
 
         count += 1
-        # time.sleep(1)
+
 
     print("Finished displaying all frames")
     # cleanup the windows
     cv2.destroyAllWindows()
 
 def getThreads():
-	print("starting le threads")
+	print("starting Threads")
 
-	#les arguments
+	#Video file name
 	leFileName = "clip.mp4"
-    #l' finale de arguments
 
-    #le Threads
+    #Creation of all three threads.
 	extractThread = Thread(target=extractFrames,args=[leFileName])
 	grayThread = Thread(target=grayScaleImages)
 	displayThread = Thread(target=displayFrames)
+
+	#Starting threads.
 	extractThread.start()
 	grayThread.start()
 	displayThread.start()
-	# timer1 = Timer(1.0,grayThread.start)
-	# timer2= Timer(2.0,displayThread.start)
-	# timer1.start()
-	# timer2.start()
-	# extractThread.start()
+
 
 print("Starting up")
 
 
 getThreads()
-# leFileName = "clip.mp4"
-
-# leQuequeDeParis= queue.Queue()
-
-# extractFrames(leFileName,leQuequeDeParis)
-# grayScaleImages(leQuequeDeParis)
-# displayFrames(leQuequeDeParis) 
 
 
 
