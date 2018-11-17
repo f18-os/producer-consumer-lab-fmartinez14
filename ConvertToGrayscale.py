@@ -16,7 +16,7 @@ inputFrame = cv2.imread(inFileName, cv2.IMREAD_COLOR)
 
 while inputFrame is not None:
     print("Converting frame {}".format(count))
-
+    print(str(type(inputFrame)))
     # convert the image to grayscale
     grayscaleFrame = cv2.cvtColor(inputFrame, cv2.COLOR_BGR2GRAY)
     
