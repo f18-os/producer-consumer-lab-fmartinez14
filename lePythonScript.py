@@ -5,11 +5,15 @@ import cv2
 import numpy as np
 import base64
 import queue
+from threading import Thread
+from threading import Timer
+from threading import Lock
+import time
 
+leQuequeDeParis= queue.Queue(10)
+DisplayQueque = queue.Queue(10)
 
-
-
-def extractFrames(fileName, outputBuffer):
+def extractFrames(fileName):
     # Initialize frame count 
     count = 0
 
@@ -30,24 +34,27 @@ def extractFrames(fileName, outputBuffer):
         if count == 100:
         	break
         # add the frame to the buffer
-        outputBuffer.put(jpgAsText)
+        leQuequeDeParis.put(jpgAsText)
        
         success,image = vidcap.read()
         print('Reading frame {} {}'.format(count, success))
         count += 1
-
+    leQuequeDeParis.put("Done")
     print("Frame extraction complete")
 
-def grayScaleImages(inputBuffer):
+def grayScaleImages():
 
     count = 0 
 
-    startSize = inputBuffer.qsize()
-    while count < startSize:
+    startSize = leQuequeDeParis.qsize()
+
+    while True:
         print("Converting frame {}".format(count))
 
-        frameAsText = inputBuffer.get()
-
+        frameAsText = leQuequeDeParis.get(True)
+        if frameAsText == "Done":
+        	DisplayQueque.put("Done")
+        	break;
         # decode the frame 
         jpgRawImage = base64.b64decode(frameAsText)
 
@@ -72,18 +79,22 @@ def grayScaleImages(inputBuffer):
 
 
         # add the frame to the buffer
-        inputBuffer.put(saveToBuffer)
+        DisplayQueque.put(saveToBuffer)
 
         count += 1
+    print("finished converting frames")
 
-
-def displayFrames(inputBuffer):
+def displayFrames():
     # initialize frame count
     count = 0
     # go through each frame in the buffer until the buffer is empty
-    while not inputBuffer.empty():
+    while True:
         # get the next frame
-        frameAsText = inputBuffer.get()
+        frameAsText =  DisplayQueque.get(True)
+
+        if frameAsText == "Done":
+        	break;
+
         # decode the frame 
         jpgRawImage = base64.b64decode(frameAsText)
 
@@ -102,23 +113,43 @@ def displayFrames(inputBuffer):
             break
 
         count += 1
+        # time.sleep(1)
 
     print("Finished displaying all frames")
     # cleanup the windows
     cv2.destroyAllWindows()
 
+def getThreads():
+	print("starting le threads")
 
-    
+	#les arguments
+	leFileName = "clip.mp4"
+    #l' finale de arguments
+
+    #le Threads
+	extractThread = Thread(target=extractFrames,args=[leFileName])
+	grayThread = Thread(target=grayScaleImages)
+	displayThread = Thread(target=displayFrames)
+	extractThread.start()
+	grayThread.start()
+	displayThread.start()
+	# timer1 = Timer(1.0,grayThread.start)
+	# timer2= Timer(2.0,displayThread.start)
+	# timer1.start()
+	# timer2.start()
+	# extractThread.start()
 
 print("Starting up")
 
-leFileName = "clip.mp4"
 
-leQuequeDeParis= queue.Queue()
+getThreads()
+# leFileName = "clip.mp4"
 
-extractFrames(leFileName,leQuequeDeParis)
-grayScaleImages(leQuequeDeParis)
-displayFrames(leQuequeDeParis) 
+# leQuequeDeParis= queue.Queue()
+
+# extractFrames(leFileName,leQuequeDeParis)
+# grayScaleImages(leQuequeDeParis)
+# displayFrames(leQuequeDeParis) 
 
 
 
