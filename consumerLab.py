@@ -6,10 +6,13 @@ import numpy as np
 import base64
 import queue
 from threading import Thread
+from customQueue import Q
 
+# grayScaleQueue= queue.Queue(10)    #Old queues used by previous version using Queue.queue.
+# DisplayQueque = queue.Queue(10)
 
-grayScaleQueue= queue.Queue(10)
-DisplayQueque = queue.Queue(10)
+grayScaleQueue = Q(10)
+DisplayQueque = Q(10)
 
 def extractFrames(fileName):
     # Initialize frame count 
@@ -44,7 +47,7 @@ def grayScaleImages():
 
     while True:
 
-        frameAsText = grayScaleQueue.get(True)
+        frameAsText = grayScaleQueue.get()
         if frameAsText == "Done":
         	DisplayQueque.put("Done")
         	break;
@@ -82,7 +85,7 @@ def displayFrames():
     # go through each frame in the buffer until the buffer is empty
     while True:
         # get the next frame
-        frameAsText =  DisplayQueque.get(True)
+        frameAsText =  DisplayQueque.get()
 
         if frameAsText == "Done":
         	break;
