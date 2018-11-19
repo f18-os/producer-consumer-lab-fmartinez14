@@ -7,7 +7,7 @@ queue 10 frames at a time. Furthermore, the grayscale will consume them and push
 
 * Please note that the threads are started using the .start() method. This call in Python does not start the threads as soon as it is called. It is up to the operating system to do so. However, this program will not crash regardless of the order that they are started in.
 
-
+* Please note that this approach originally used Queue.queue. It has been changed to use counting semaphores as asked before. 
 
 
 # Original Lab instructions:
